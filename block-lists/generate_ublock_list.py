@@ -5,7 +5,9 @@ Generates a uBlock-compatible block list for the tracking domains identified
 by the DuckDuckGo Tracker Radar.
 """
 
+import functools
 import json
+import operator
 import pathlib
 
 __copright__ = "Copyright 2020, Jeff Engel"
@@ -36,9 +38,11 @@ def read_json_file(file : pathlib.Path) -> str:
 
 if __name__ == "__main__":
     domain_objects = [read_json_file(file) for file in domains_dir.iterdir()]
+    resources = functools.reduce(operator.concat, (obj["resources"] for obj in domain_objects))
+    rules = [resource["rule"].replace("\\", "") for resource in resources]
 
     with output_file.open("w") as f:
         f.writelines(preamble)
-        f.writelines("\n||{0}^$third-party".format(obj["domain"]) for obj in domain_objects)
+        f.writelines("\n|{0}".format(rule) for rule in rules)
 
-    print("Wrote {0} domains to {1}".format(len(domain_objects), output_file))
+    print("Wrote {0} resources to {1}".format(len(rules), output_file))
